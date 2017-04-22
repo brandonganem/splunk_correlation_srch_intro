@@ -98,7 +98,43 @@ While these examples are focused on authentication, I think it's pretty clear ho
 
 == Building the Search
 
+Let's break this down into bite size chunks.
+* | tsats syntax
+** Or how to return data from an accelerated datamodel
+* Some stats-fu
+** I'm no Kyle Smith
+* Fields that belong in a notable event
+
+=== | tstats
+
+// Create a color coded, broken out tstats command here
+| tstats <stats func> where <restraint> by <field list, time & span>
+
+=== Stats-fu & filtering
+
+| stats values(field) AS field, sum(thing) AS field by field
+
+streamstats vs eventstats (Pimp Kyle's talk)
+
+Filtering
+
+=== Final result formatting
+
+Let's take filtered results and table them out into the fields we would like to include in our notabe event.
+While you do have the ability to add displayed fields in incident review, if we have a value that makes sense in an already displayed field then we should use it!
+
 == Entry into Content Management
+
+// Some screen shots for filling out Content Management
+Notes on creating a notable event
+
+<<<<
+
+How to schedule your Correlation Search
+
+<<<<
+
+Risk? 'cause I accepted the risk.
 
 == Drilldown Creation
 
@@ -120,9 +156,15 @@ In some circumstances, you're working with data outside a datamodel, so a more t
 
 <<<<
 
+We already spoke to | tstats syntax above, but I would like to provide a quick template for utilizing | datamodel searches.
 
+DM search example, broken into pieces
 
 == Extra Credit
+
+We didn't get into anything related to dynamic thresholding or exteme search.
+These items are worthy of a talk themselves.
+I did, however, want to include some resources and further reading for the adventorous.
 
 === Extreme Search!
 
