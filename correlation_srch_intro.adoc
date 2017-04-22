@@ -1,0 +1,139 @@
+= Basic Correlation Search Design and Implmentation
+Brandon Ganem <bganem@aplura.com>
+:date: April 21, 2017
+// :backend: deckjs
+:deckjs_transition: fade
+:theme:
+:navigation:
+:menu:
+:split:
+:toc: left
+:icons: front
+:imagesdir: ./images
+:url-aplura: http://www.aplura.com
+// This is in place for the attributes section
+:Aplura: Aplura
+:prod: Splunk
+:lead: mailto:bganem@aplura.com[Brandon Ganem]
+
+
+ifeval::["{backend}" == "html5"]
+[discrete]
+== Title Page
+
+{doctitle}
+
+{firstname} {lastname}
+
+{email}
+endif::[]
+
+== Overview
+
+* What is a Correlation Search?
+* Brainstorming // Correlation Search Ideas
+* Building the Search
+* Entry into Content Management
+* Drilldown Creation
+* Extra Credit
+
+== What is a Correlation Search?
+
+I like to think of Correlation Searches are regular saved searches with addtional scaffolding added.
+
+
+== Brainstorming // Correlation Search Ideas
+
+Reasons for creating a Correlation Search:
+
+* Replace an existing Correlation Search with one tailored for the environment
+* Additional alerting an organization's strength's and weaknesses
+** Leaverage good visability on endpoints to aid lack of visability on the network
+* Application 
+
+<<<<
+
+For this presentation I'll be working walking through the steps to replace the built in "Access - Brute Force Access Behavior Detected - Rule" search that Splunk Enterprise Security ships with.
+If I'm being honest, I've never been much of a fan of this search and I've heard others have the same complaint, so let's come up with something better.
+
+<<<<
+
+The built in correlation search isn't particuarly smart.
+A generous reading of what the search could go something like so:
+
+"Detects excessive number of failed login attempts along with a successful attempt (this could indicate a successful brute force attack)"
+
+[%step]
+** Yes, I swiped that from the description.
+
+[%step]
+A less generous reading:
+
+This search simply counts the number of successes and failures by user and compares the number of failures to an extreme search context.
+There is no concept of time order, just the requirement of some number of failures plus one or more successes.
+So long as the number of failures is greater than the threshold set by the Extreme Search context, a notable event is created.
+
+<<<<
+
+In my expereince that isn't useful.
+//// Add picture later
+//image::firehose_dog.jpg[]
+//[.canvas-caption, position=center]
+
+<<<<
+
+=== Some alternatives
+* A number of failures followed by a success within a timespan
+* User account spraying
+* Password spraying
+
+Some more advanced ideas
+
+* Admin account logged into a new system, followed by many login attempts by that account
+** Maybe expand this to lessor privledged users too?
+** For a good datasource here, check out special group auditing in Windows (it's pretty neat)
+* Executable mimetype download followed by an authentication spike
+
+While these examples are focused on authentication, I think it's pretty clear how they can be expanded to other datasources.
+
+== Building the Search
+
+== Entry into Content Management
+
+== Drilldown Creation
+
+The goal of a useful drilldown is to direct your analysts to additional relevent information.
+With this in mind I don't find it to be particuarly useful to just dump an analyst to information nearly identical to what's in the notable event.
+With that said, a link to raw events can work in a pinch.
+
+<<<<
+
+With drilldown searches there are two main options to bring data back to the analyst:
+* A | datamodel search
+** Pro - Raw events!
+** Con - Typically really slow
+* A | tstats search
+** Pro - Really quick
+** Con - No raw events here, we're working with the fields within the datamodel itself
+
+In some circumstances, you're working with data outside a datamodel, so a more traditional SPL search can make sense here.
+
+<<<<
+
+
+
+== Extra Credit
+
+=== Extreme Search!
+
+Anything that's a static threshold or stdv can typically be converted into an Extreme Search context.
+You can control how the context is generated and updated, giving you a self learning threshold on your searches.
+
+Macy's xs preso
+
+Starcher's xs Blog
+
+=== Community
+
+Join us on Slack or IRC, I'm beatus.
+In Slack we have a handful of channels dedicated to security and advanced search techniques.
