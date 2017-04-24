@@ -39,7 +39,7 @@ endif::[]
 
 == What is a Correlation Search?
 
-I like to think of Correlation Searches are regular saved searches with addtional scaffolding added.
+I like to think of Correlation Searches are regular saved searches with additional scaffolding added.
 
 ES <=4.5 - correlationsearches.conf provides the scaffolding.
 
@@ -73,6 +73,7 @@ A generous reading of what the search could go something like so:
 [%step]
 A less generous reading:
 
+[%step]
 This search simply counts the number of successes and failures by user and compares the number of failures to an extreme search context.
 There is no concept of time order, just the requirement of some number of failures plus one or more successes.
 So long as the number of failures is greater than the threshold set by the Extreme Search context, a notable event is created.
@@ -80,11 +81,9 @@ So long as the number of failures is greater than the threshold set by the Extre
 <<<<
 
 In my experience that isn't useful.
-// Add picture later
-//image::firehose_dog.jpg[]
-//[.canvas-caption, position=center]
 
-<<<<
+image::firehose.jpg[]
+//[.canvas-caption, position=center]
 
 == Some alternatives
 * A number of failures followed by a success within a timespan
@@ -262,3 +261,7 @@ https://splunk-usergroups.signup.team/[Slack Signup]
 https://wiki.splunk.com/Community:IRC[Splunk IRC]
 
 https://answers.splunk.com/[Splunk Answers]
+
+<<<<
+
+https://github.com/brandonganem/splunk_correlation_srch_intro[Link to Slides]

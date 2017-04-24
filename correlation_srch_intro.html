@@ -40,7 +40,7 @@
 </section>
 <section class="slide" id="_what_is_a_correlation_search">
 <h2>What is a Correlation Search?</h2>
-<div class="paragraph"><p>I like to think of Correlation Searches are regular saved searches with addtional scaffolding added.</p></div>
+<div class="paragraph"><p>I like to think of Correlation Searches are regular saved searches with additional scaffolding added.</p></div>
 <div class="paragraph"><p>ES &#8656;4.5 - correlationsearches.conf provides the scaffolding.</p></div>
 <div class="paragraph"><p>ES &gt;4.5 - correlationsearches.conf has been removed and merged back into savedsearches.conf.
 It really is just a saved search!</p></div>
@@ -54,7 +54,7 @@ It really is just a saved search!</p></div>
 <li><p>
 Additional alerting an organization&#8217;s strength&#8217;s and weaknesses<div class="ulist">
 <ul>
-<li>Leaverage good visability on endpoints to aid lack of visability on the network</li>
+<li>Leverage good visibility on endpoints to aid lack of visibility on the network</li>
 </ul>
 </div></p></li>
 <li>Custom datasources that don&#8217;t fit into a CIM datamodel</li>
@@ -64,7 +64,7 @@ Additional alerting an organization&#8217;s strength&#8217;s and weaknesses<div 
 <div class="paragraph"><p>For this presentation I&#8217;ll be working walking through the steps to replace the built in "Access - Brute Force Access Behavior Detected - Rule" search that Splunk Enterprise Security ships with.
 If I&#8217;m being honest, I&#8217;ve never been much of a fan of this search and I&#8217;ve heard others have the same complaint, so let&#8217;s come up with something better.</p></div>
 <div style="page-break-after: always"></div>
-<div class="paragraph"><p>The built in correlation search isn&#8217;t particuarly smart.
+<div class="paragraph"><p>The built in correlation search isn&#8217;t particularly smart.
 A generous reading of what the search could go something like so:</p></div>
 <div class="paragraph"><p>"Detects excessive number of failed login attempts along with a successful attempt (this could indicate a successful brute force attack)"</p></div>
 <div class="ulist">
@@ -73,12 +73,16 @@ A generous reading of what the search could go something like so:</p></div>
 </ul>
 </div>
 <div class="paragraph slide"><p>A less generous reading:</p></div>
-<div class="paragraph"><p>This search simply counts the number of successes and failures by user and compares the number of failures to an extreme search context.
+<div class="paragraph slide"><p>This search simply counts the number of successes and failures by user and compares the number of failures to an extreme search context.
 There is no concept of time order, just the requirement of some number of failures plus one or more successes.
 So long as the number of failures is greater than the threshold set by the Extreme Search context, a notable event is created.</p></div>
 <div style="page-break-after: always"></div>
-<div class="paragraph"><p>In my expereince that isn&#8217;t useful.</p></div>
-<div style="page-break-after: always"></div>
+<div class="paragraph"><p>In my experience that isn&#8217;t useful.</p></div>
+<div class="imageblock">
+<div class="content">
+<img alt="firehose" src="./images/firehose.jpg" />
+</div>
+</div>
 </section>
 <section class="slide" id="_some_alternatives">
 <h2>Some alternatives</h2>
@@ -95,7 +99,7 @@ So long as the number of failures is greater than the threshold set by the Extre
 <li><p>
 Admin account logged into a new system, followed by many login attempts by that account<div class="ulist">
 <ul>
-<li>Maybe expand this to lessor privledged users too?</li>
+<li>Maybe expand this to lessor privileged users too?</li>
 <li>For a good datasource here, check out special group auditing in Windows (it&#8217;s pretty neat)</li>
 </ul>
 </div></p></li>
@@ -186,13 +190,13 @@ While you do have the ability to add displayed fields in incident review, if we 
 <li><p>
 &lt;Security Domain&gt;-&lt;Name&gt;<div class="ulist">
 <ul>
-<li>Auth-Brute_force_succeded</li>
+<li>Auth-Brute_force_succeeded</li>
 </ul>
 </div></p></li>
 <li><p>
 &lt;Security Domain&gt;-&lt;Name&gt;-&lt;Timespan&gt;<div class="ulist">
 <ul>
-<li>Auth-Brute_force_succeded-1h</li>
+<li>Auth-Brute_force_succeeded-1h</li>
 </ul>
 </div></p></li>
 </ul>
@@ -228,7 +232,7 @@ Use throttling to prevent duplicates.</p></div>
 <section class="slide" id="_notables_risk">
 <h2>Notables &amp; Risk</h2>
 <div class="paragraph"><p>Notables and Risk are just modular alert actions.
-With Notable events, you have the opportunity to use varaibles to present information to your analysts.</p></div>
+With Notable events, you have the opportunity to use variables to present information to your analysts.</p></div>
 <div class="imageblock">
 <div class="content">
 <img alt="notable 01" src="./images/notable_01.png" />
@@ -240,8 +244,8 @@ With Notable events, you have the opportunity to use varaibles to present inform
 </section>
 <section class="slide" id="_drilldown_creation">
 <h2>Drilldown Creation</h2>
-<div class="paragraph"><p>The goal of a useful drilldown is to direct your analysts to additional relevent information.
-With this in mind I don&#8217;t find it to be particuarly useful to just dump an analyst to information nearly identical to what&#8217;s in the notable event.
+<div class="paragraph"><p>The goal of a useful drilldown is to direct your analysts to additional relevant information.
+With this in mind I don&#8217;t find it to be particularly useful to just dump an analyst to information nearly identical to what&#8217;s in the notable event.
 With that said, a link to raw events can work in a pinch.</p></div>
 <div style="page-break-after: always"></div>
 <div class="paragraph"><p>With drilldown searches there are two main options to bring data back to the analyst:</p></div>
@@ -287,9 +291,9 @@ A | tstats search<div class="ulist">
 </section>
 <section class="slide" id="_extra_credit">
 <h2>Extra Credit</h2>
-<div class="paragraph"><p>We didn&#8217;t get into anything related to dynamic thresholding or exteme search.
+<div class="paragraph"><p>We didn&#8217;t get into anything related to dynamic thresholding or extreme search.
 These items are worthy of a talk themselves.
-I did, however, want to include some resources and further reading for the adventorous.</p></div>
+I did, however, want to include some resources and further reading for the adventurous.</p></div>
 <section class="slide" id="_extreme_search">
 <h2>Extreme Search!</h2>
 <div class="paragraph"><p>Anything that&#8217;s a static threshold or stdv can typically be converted into an Extreme Search context.
