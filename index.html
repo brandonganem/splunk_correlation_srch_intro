@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta content="text/html; charset=" http-equiv="Content-Type" />
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+<meta content="Asciidoctor 1.5.5" name="generator" />
+<meta content="Brandon Ganem" name="author" />
+<title>Correlation Search Design</title>
+<link href="deck.js/core/deck.core.css" rel="stylesheet" />
+<link href="deck.js/extensions/scale/deck.scale.css" media="screen" rel="stylesheet" />
+<link href="deck.js/extensions/menu/deck.menu.css" media="screen" rel="stylesheet" />
+<link href="deck.js/extensions/navigation/deck.navigation.css" media="screen" rel="stylesheet" />
+<link href="deck.js/extensions/toc/deck.toc.css" media="screen" rel="stylesheet" />
+<link href="deck.js/themes/style/web-2.0.css" media="screen" rel="stylesheet" />
+<link href="deck.js/themes/transition/fade.css" media="screen" rel="stylesheet" />
+<link href="deck.js/core/print.css" media="print" rel="stylesheet" />
+<script src="deck.js/modernizr.custom.js"></script>
+</head>
+<body class="article">
+<div class="deck-container">
+<section class="slide" id="title-slide">
+<h1>Correlation Search Design</h1>
+<span id="author">Brandon Ganem</span>
+<br />
+<span id="email"><a href="mailto:bganem@aplura.com">bganem@aplura.com</a></span>
+<br />
+</section>
+<section class="slide" id="_overview">
+<h2>Overview</h2>
+<div class="ulist">
+<ul>
+<li>What is a Correlation Search?</li>
+<li>Brainstorming // Correlation Search Ideas</li>
+<li>Building the Search</li>
+<li>Entry into Content Management</li>
+<li>Drilldown Creation</li>
+<li>Extra Credit</li>
+</ul>
+</div>
+</section>
+<section class="slide" id="_what_is_a_correlation_search">
+<h2>What is a Correlation Search?</h2>
+<div class="paragraph"><p>I like to think of Correlation Searches are regular saved searches with additional scaffolding added.</p></div>
+<div class="paragraph"><p>ES &#8656;4.5 - correlationsearches.conf provides the scaffolding.</p></div>
+<div class="paragraph"><p>ES &gt;4.5 - correlationsearches.conf has been removed and merged back into savedsearches.conf.
+It really is just a saved search!</p></div>
+</section>
+<section class="slide" id="_brainstorming_correlation_search_ideas">
+<h2>Brainstorming // Correlation Search Ideas</h2>
+<div class="paragraph"><p>Reasons for creating a Correlation Search:</p></div>
+<div class="ulist">
+<ul>
+<li>Replace an existing Correlation Search with one tailored for the environment</li>
+<li><p>
+Additional alerting an organization&#8217;s strength&#8217;s and weaknesses<div class="ulist">
+<ul>
+<li>Leverage good visibility on endpoints to aid lack of visibility on the network</li>
+</ul>
+</div></p></li>
+<li>Custom datasources that don&#8217;t fit into a CIM datamodel</li>
+</ul>
+</div>
+<div style="page-break-after: always"></div>
+<div class="paragraph"><p>For this presentation I&#8217;ll be working walking through the steps to replace the built in "Access - Brute Force Access Behavior Detected - Rule" search that Splunk Enterprise Security ships with.
+If I&#8217;m being honest, I&#8217;ve never been much of a fan of this search and I&#8217;ve heard others have the same complaint, so let&#8217;s come up with something better.</p></div>
+<div style="page-break-after: always"></div>
+<div class="paragraph"><p>The built in correlation search isn&#8217;t particularly smart.
+A generous reading of what the search could go something like so:</p></div>
+<div class="paragraph"><p>"Detects excessive number of failed login attempts along with a successful attempt (this could indicate a successful brute force attack)"</p></div>
+<div class="ulist">
+<ul>
+<li class="slide">Yes, I swiped that from the description.</li>
+</ul>
+</div>
+<div class="paragraph slide"><p>A less generous reading:</p></div>
+<div class="paragraph slide"><p>This search simply counts the number of successes and failures by user and compares the number of failures to an extreme search context.
+There is no concept of time order, just the requirement of some number of failures plus one or more successes.
+So long as the number of failures is greater than the threshold set by the Extreme Search context, a notable event is created.</p></div>
+<div style="page-break-after: always"></div>
+<div class="paragraph"><p>In my experience that isn&#8217;t useful.</p></div>
+<div class="imageblock">
+<div class="content">
+<img alt="firehose" src="./images/firehose.jpg" />
+</div>
+</div>
+</section>
+<section class="slide" id="_some_alternatives">
+<h2>Some alternatives</h2>
+<div class="ulist">
+<ul>
+<li>A number of failures followed by a success within a timespan</li>
+<li>User account spraying</li>
+<li>Password spraying</li>
+</ul>
+</div>
+<div class="paragraph"><p>Some more advanced ideas</p></div>
+<div class="ulist">
+<ul>
+<li><p>
+Admin account logged into a new system, followed by many login attempts by that account<div class="ulist">
+<ul>
+<li>Maybe expand this to lessor privileged users too?</li>
+<li>For a good datasource here, check out special group auditing in Windows (it&#8217;s pretty neat)</li>
+</ul>
+</div></p></li>
+<li>Executable mimetype download followed by an authentication spike</li>
+</ul>
+</div>
+<div class="paragraph"><p>While these examples are focused on authentication, I think it&#8217;s pretty clear how they can be expanded to other datasources.</p></div>
+</section>
+<section class="slide" id="_building_the_search">
+<h2>Building the Search</h2>
+<div class="paragraph"><p>Let&#8217;s break this down into bite size chunks.</p></div>
+<div class="ulist">
+<ul>
+<li><p>
+<code>| tsats syntax</code><div class="ulist">
+<ul>
+<li>Or how to return data from an accelerated datamodel</li>
+</ul>
+</div></p></li>
+<li>Some stats-fu</li>
+<li>Fields that belong in a notable event</li>
+</ul>
+</div>
+</section>
+<section class="slide" id="__tstats">
+<h2>| tstats</h2>
+<div class="paragraph"><p><code>| tstats &lt;stats func&gt; where &lt;restraint&gt; by &lt;field list, time &amp; span&gt;</code></p></div>
+<div class="paragraph"><p>So stepping through it:</p></div>
+<div class="paragraph slide"><p>What do we want to do to the data?</p></div>
+<div class="literalblock slide">
+<div class="content">
+<pre>| tstats count, dc(Authentication.dest) AS dc_dest</pre>
+</div>
+</div>
+<div class="paragraph slide"><p>Where is the data coming from?</p></div>
+<div class="literalblock slide">
+<div class="content">
+<pre>from datamodel=Authentication.Authentication</pre>
+</div>
+</div>
+<div class="paragraph slide"><p>Our stats aggregation clause:</p></div>
+<div class="literalblock slide">
+<div class="content">
+<pre>by Authentication.action, Authentication.src, Authentication.user, _time span=1m</pre>
+</div>
+</div>
+<div class="paragraph slide"><p>Lastly, lets drop the datamodel name:</p></div>
+<div class="literalblock slide">
+<div class="content">
+<pre>|`drop_dm_object_name("Authentication")`</pre>
+</div>
+</div>
+</section>
+<section class="slide" id="_stats_fu_filtering">
+<h2>Stats-fu &amp; filtering</h2>
+<div class="paragraph"><p>Let&#8217;s add some additional logic to our search:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre>| streamstats sum(eval(match(action,"failure"))) as action_count reset_after="("match(action,\"success\")")" by user</pre>
+</div>
+</div>
+<div class="paragraph"><p>Filtering:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre>| where match(action,"success") AND action_count&gt;=4</pre>
+</div>
+</div>
+<div class="paragraph"><p>For further reading, check out Kyle Smith&#8217;s talk on <a href="http://conf.splunk.com/files/2016/slides/lesser-known-search-commands.pdf">Lesser Known Search Commands</a></p></div>
+</section>
+<section class="slide" id="_final_result_formatting">
+<h2>Final result formatting</h2>
+<div class="paragraph"><p>Let&#8217;s take filtered results and table them out into the fields we would like to include in our notabe event.
+While you do have the ability to add displayed fields in incident review, if we have a value that makes sense in an already displayed field then we should use it!</p></div>
+<section class="slide" id="_putting_it_all_together">
+<h2>Putting it all together</h2>
+<div class="literalblock">
+<div class="content">
+<pre>| tstats count, dc(Authentication.dest) AS dc_dest from datamodel=Authentication.Authentication by Authentication.action, Authentication.src, Authentication.user, _time span=1m | `drop_dm_object_name("Authentication")` | streamstats sum(eval(match(action,"failure"))) as action_count reset_after="("match(action,\"success\")")" by user | where match(action,"success") AND action_count&gt;=4 | table _time, user, src, dc_dest, action_count</pre>
+</div>
+</div>
+</section>
+</section>
+<section class="slide" id="_entry_into_content_management">
+<h2>Entry into Content Management</h2>
+<div class="paragraph"><p>Naming scheme ideas:</p></div>
+<div class="ulist">
+<ul>
+<li><p>
+&lt;Security Domain&gt;-&lt;Name&gt;<div class="ulist">
+<ul>
+<li>Auth-Brute_force_succeeded</li>
+</ul>
+</div></p></li>
+<li><p>
+&lt;Security Domain&gt;-&lt;Name&gt;-&lt;Timespan&gt;<div class="ulist">
+<ul>
+<li>Auth-Brute_force_succeeded-1h</li>
+</ul>
+</div></p></li>
+</ul>
+</div>
+<div class="paragraph"><p>I&#8217;m a big fan of something that sticks out as a custom search.
+Beyond that, pick something consistent for, it will make it easier to manage from an administrative perspective and easier for analysts to know which correlation searches are in-house.</p></div>
+<div style="page-break-after: always"></div>
+<div class="imageblock">
+<div class="content">
+<img alt="content mgmt 01" src="./images/content_mgmt_01.png" />
+</div>
+</div>
+</section>
+<section class="slide" id="_scheduling">
+<h2>Scheduling</h2>
+<div class="ulist">
+<ul>
+<li>How quickly do you need to be alerted?</li>
+<li>What kind of time window are you looking to capture?</li>
+</ul>
+</div>
+<div class="paragraph"><p>If you think you need realtime, you probably don&#8217;t.
+Instead, run your search over a larger window than the schedule.
+For example, a search runs every 20 minutes looking at an hour of data.
+Use throttling to prevent duplicates.</p></div>
+<div style="page-break-after: always"></div>
+<div class="imageblock">
+<div class="content">
+<img alt="content mgmt 02" src="./images/content_mgmt_02.png" />
+</div>
+</div>
+</section>
+<section class="slide" id="_notables_risk">
+<h2>Notables &amp; Risk</h2>
+<div class="paragraph"><p>Notables and Risk are just modular alert actions.
+With Notable events, you have the opportunity to use variables to present information to your analysts.</p></div>
+<div class="imageblock">
+<div class="content">
+<img alt="notable 01" src="./images/notable_01.png" />
+</div>
+</div>
+<div style="page-break-after: always"></div>
+<div class="paragraph"><p><a href="https://www.youtube.com/watch?v=9IG3zqvUqJY">Risk?</a></p></div>
+<div class="paragraph"><p>Frankly this is a topic worthy of it&#8217;s own talk.</p></div>
+</section>
+<section class="slide" id="_drilldown_creation">
+<h2>Drilldown Creation</h2>
+<div class="paragraph"><p>The goal of a useful drilldown is to direct your analysts to additional relevant information.
+With this in mind I don&#8217;t find it to be particularly useful to just dump an analyst to information nearly identical to what&#8217;s in the notable event.
+With that said, a link to raw events can work in a pinch.</p></div>
+<div style="page-break-after: always"></div>
+<div class="paragraph"><p>With drilldown searches there are two main options to bring data back to the analyst:</p></div>
+<div class="ulist">
+<ul>
+<li><p>
+A | datamodel search<div class="ulist">
+<ul>
+<li>Pro - Raw events!</li>
+<li>Con - Typically really slow</li>
+</ul>
+</div></p></li>
+<li><p>
+A | tstats search<div class="ulist">
+<ul>
+<li>Pro - Really quick</li>
+<li>Con - No raw events here, we&#8217;re working with the fields within the datamodel itself</li>
+</ul>
+</div></p></li>
+</ul>
+</div>
+<div class="paragraph"><p>In some circumstances, you&#8217;re working with data outside a datamodel, so a more traditional SPL search can make sense here.</p></div>
+<div style="page-break-after: always"></div>
+<div class="paragraph"><p>We already spoke to | tstats syntax above, but I would like to provide a quick template for utilizing | datamodel searches.</p></div>
+<div class="paragraph"><p>Base:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre>|  datamodel &lt;datamodel&gt; &lt;object in datamodel&gt; search</pre>
+</div>
+</div>
+<div class="paragraph"><p>Filter:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre>| search &lt;field in datamodel&gt;=&lt;some value&gt;</pre>
+</div>
+</div>
+<div class="paragraph"><p>Putting it together:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre>| datamodel Authentication Failed_Authentication search | search Authentication.user="$user$"</pre>
+</div>
+</div>
+</section>
+<section class="slide" id="_extra_credit">
+<h2>Extra Credit</h2>
+<div class="paragraph"><p>We didn&#8217;t get into anything related to dynamic thresholding or extreme search.
+These items are worthy of a talk themselves.
+I did, however, want to include some resources and further reading for the adventurous.</p></div>
+<section class="slide" id="_extreme_search">
+<h2>Extreme Search!</h2>
+<div class="paragraph"><p>Anything that&#8217;s a static threshold or stdv can typically be converted into an Extreme Search context.
+You can control how the context is generated and updated, giving you a self learning threshold on your searches.</p></div>
+<div class="paragraph"><p><a href="http://conf.splunk.com/files/2016/slides/anomaly-hunting-with-splunk-software.pdf">Macy Cronkrite&#8217;s .conf2016 talk</a></p></div>
+<div class="paragraph"><p><a href="http://www.georgestarcher.com/splunk-getting-extreme-part-one/">Starcher&#8217;s eXtreme Search blog series</a></p></div>
+</section>
+<section class="slide" id="_community">
+<h2>Community</h2>
+<div class="paragraph"><p>Join us on Slack or IRC, I&#8217;m beatus.
+In Slack we have a handful of channels dedicated to security and advanced search techniques.</p></div>
+<div class="paragraph"><p><a href="https://splunk-usergroups.signup.team/">Slack Signup</a></p></div>
+<div class="paragraph"><p><a href="https://wiki.splunk.com/Community:IRC">Splunk IRC</a></p></div>
+<div class="paragraph"><p><a href="https://answers.splunk.com/">Splunk Answers</a></p></div>
+</section>
+</section>
+<section class="slide" id="_slides">
+<h2>Slides</h2>
+<div class="paragraph"><p><a href="https://github.com/brandonganem/splunk_correlation_srch_intro">Slides are on my github.</a></p></div>
+<div class="paragraph"><p>Also, shoutout to Chuck for his <a href="https://github.com/chuckf/intro_asciidoc">Asciidoc talk</a></p></div>
+</section>
+<div aria-role="navigation">
+<a class="deck-prev-link" href="#" title="Previous">&#8592;</a>
+<a class="deck-next-link" href="#" title="Next">&#8594;</a>
+</div>
+</div>
+<script src="deck.js/jquery.min.js"></script>
+<script src="deck.js/core/deck.core.js"></script>
+<script src="deck.js/extensions/scale/deck.scale.js"></script>
+<script src="deck.js/extensions/menu/deck.menu.js"></script>
+<script src="deck.js/extensions/navigation/deck.navigation.js"></script>
+<script src="deck.js/extensions/split/deck.split.js"></script>
+<script src="deck.js/extensions/toc/deck.toc.js"></script>
+<div class="deck-toc"></div>
+<script type="text/javascript">
+  //<![CDATA[
+    (function($, deck, undefined) {
+      $.deck.defaults.keys['previous'] = [8, 33, 37, 39];
+      $.deck.defaults.keys['next'] = [13, 32, 34, 39];
+    
+      $.extend(true, $[deck].defaults, {
+          countNested: false
+      });
+    
+      $.deck('.slide');
+    })(jQuery, 'deck');
+  //]]>
+</script>
+<style type="text/css">
+  /*<![CDATA[*/
+    .slide.canvas-image {
+    -moz-background-size: cover;
+    -webkit-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+    display: -moz-box;
+    display: -webkit-box;
+    display: -ms-box;
+    display: box;
+    -moz-box-orient: vertical;
+    -webkit-box-orient: vertical;
+    -ms-box-orient: vertical;
+    box-orient: vertical;
+    -moz-box-align: start;
+    -webkit-box-align: start;
+    -ms-box-align: start;
+    box-align: start;
+    -moz-box-pack: start;
+    -webkit-box-pack: start;
+    -ms-box-pack: start;
+    box-pack: start;}
+    
+    .bottom-left {
+      left: 1%;
+      bottom: 20%; }
+    
+    .top-left {
+      left: 1%;
+      top: 20%; }
+    
+    .bottom-right {
+      right: 1%;
+      bottom: 20%; }
+    
+    .top-right {
+      right: 1%;
+      top: 20%; }
+    
+    .center-up {
+      right: 50%;
+      top: 1%;
+    }
+    
+    .center-down {
+      right: 50%;
+      bottom: 1%;
+    }
+    .canvas-image .canvas-caption p {
+      text-align: center;
+      padding-top: 0;
+      padding: 0;
+      -moz-transform: none;
+      -webkit-transform: none;
+      -o-transform: none;
+      -ms-transform: none;
+      transform: none;
+      display: inline;
+      position: absolute;
+      background-color: rgba(0, 0, 0, 0.7);
+      font-weight: bold;
+      font-size: 58px;
+      -webkit-box-shadow: 2px 2px 2px #000;
+      -moz-box-shadow: 2px 2px 2px #000;
+      box-shadow: 2px 2px 2px #000;
+      padding: 1rem;
+      color: white; }
+    kbd.keyseq { color: #555555; }
+    kbd:not(.keyseq) {
+      display: inline-block;
+      color: #222222;
+      font-size: 0.7em;
+      line-height: 1.4;
+      background-color: #F7F7F7;
+      border: 1px solid #ccc;
+      -webkit-border-radius: 3px;
+      border-radius: 3px;
+      -webkit-box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 0 0 2px white inset;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 0 0 2px white inset;
+      margin: -0.15em 0.15em 0 0.15em;
+      padding: 0.2em 0.6em;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    kbd kbd:first-child { margin-left: 0; }
+    kbd kbd:last-child { margin-right: 0; }
+  /*]]>*/
+</style>
+</body>
+</html>
