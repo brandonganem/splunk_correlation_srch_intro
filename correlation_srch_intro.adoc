@@ -262,6 +262,9 @@ https://wiki.splunk.com/Community:IRC[Splunk IRC]
 
 https://answers.splunk.com/[Splunk Answers]
 
-<<<<
+== Slides
 
-https://github.com/brandonganem/splunk_correlation_srch_intro[Link to Slides]
+https://github.com/brandonganem/splunk_correlation_srch_intro[Slides are on my github.]
+
+Also, shoutout to Chuck for his https://github.com/chuckf/intro_asciidoc[Asciidoc talk]
+
