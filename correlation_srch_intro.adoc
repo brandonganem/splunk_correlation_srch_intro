@@ -1,6 +1,6 @@
-= Basic Correlation Search Design and Implmentation
+= Correlation Search Design
 Brandon Ganem <bganem@aplura.com>
-:date: April 21, 2017
+:date: April 24, 2017
 // :backend: deckjs
 :deckjs_transition: fade
 :theme:
@@ -41,6 +41,10 @@ endif::[]
 
 I like to think of Correlation Searches are regular saved searches with addtional scaffolding added.
 
+ES <=4.5 - correlationsearches.conf provides the scaffolding.
+
+ES >4.5 - correlationsearches.conf has been removed and merged back into savedsearches.conf.
+It really is just a saved search!
 
 == Brainstorming // Correlation Search Ideas
 
@@ -49,7 +53,7 @@ Reasons for creating a Correlation Search:
 * Replace an existing Correlation Search with one tailored for the environment
 * Additional alerting an organization's strength's and weaknesses
 ** Leaverage good visability on endpoints to aid lack of visability on the network
-* Application 
+* Custom datasources that don't fit into a CIM datamodel
 
 <<<<
 
@@ -76,13 +80,13 @@ So long as the number of failures is greater than the threshold set by the Extre
 <<<<
 
 In my expereince that isn't useful.
-//// Add picture later
+// Add picture later
 //image::firehose_dog.jpg[]
 //[.canvas-caption, position=center]
 
 <<<<
 
-=== Some alternatives
+== Some alternatives
 * A number of failures followed by a success within a timespan
 * User account spraying
 * Password spraying
@@ -99,42 +103,104 @@ While these examples are focused on authentication, I think it's pretty clear ho
 == Building the Search
 
 Let's break this down into bite size chunks.
-* | tsats syntax
+
+* `| tsats syntax`
 ** Or how to return data from an accelerated datamodel
 * Some stats-fu
-** I'm no Kyle Smith
 * Fields that belong in a notable event
 
-=== | tstats
+== | tstats
 
 // Create a color coded, broken out tstats command here
-| tstats <stats func> where <restraint> by <field list, time & span>
+`| tstats <stats func> where <restraint> by <field list, time & span>`
 
-=== Stats-fu & filtering
+So stepping through it:
+[%step]
+What do we want to do to the data?
 
-| stats values(field) AS field, sum(thing) AS field by field
+[%step]
+ | tstats count, dc(Authentication.dest) AS dc_dest
 
-streamstats vs eventstats (Pimp Kyle's talk)
+[%step]
+Where is the data coming from?
 
-Filtering
+[%step]
+ from datamodel=Authentication.Authentication
 
-=== Final result formatting
+[%step]
+Our stats aggregation clause:
+
+[%step]
+ by Authentication.action, Authentication.src, Authentication.user, _time span=1m
+
+[%step]
+Lastly, lets drop the datamodel name:
+
+[%step]
+ |`drop_dm_object_name("Authentication")`
+
+== Stats-fu & filtering
+Let's add some additional logic to our search:
+
+ | streamstats sum(eval(match(action,"failure"))) as action_count reset_after="("match(action,\"success\")")" by user
+
+Filtering:
+
+ | where match(action,"success") AND action_count>=4
+
+For further reading, check out Kyle Smith's talk on http://conf.splunk.com/files/2016/slides/lesser-known-search-commands.pdf[Lesser Known Search Commands]
+
+== Final result formatting
 
 Let's take filtered results and table them out into the fields we would like to include in our notabe event.
 While you do have the ability to add displayed fields in incident review, if we have a value that makes sense in an already displayed field then we should use it!
 
+=== Putting it all together
+
+ | tstats count, dc(Authentication.dest) AS dc_dest from datamodel=Authentication.Authentication by Authentication.action, Authentication.src, Authentication.user, _time span=1m | `drop_dm_object_name("Authentication")` | streamstats sum(eval(match(action,"failure"))) as action_count reset_after="("match(action,\"success\")")" by user | where match(action,"success") AND action_count>=4 | table _time, user, src, dc_dest, action_count
+
 == Entry into Content Management
 
-// Some screen shots for filling out Content Management
-Notes on creating a notable event
+Naming scheme ideas:
+
+* <Security Domain>-<Name>
+** Auth-Brute_force_succeded
+* <Security Domain>-<Name>-<Timespan>
+** Auth-Brute_force_succeded-1h
+
+I'm a big fan of something that sticks out as a custom search.
+Beyond that, pick something consistent for, it will make it easier to manage from an administrative perspective and easier for analysts to know which correlation searches are in-house.
 
 <<<<
 
-How to schedule your Correlation Search
+image::content_mgmt_01.png[]
+
+== Scheduling
+
+* How quickly do you need to be alerted?
+* What kind of time window are you looking to capture?
+
+If you think you need realtime, you probably don't.
+Instead, run your search over a larger window than the schedule.
+For example, a search runs every 20 minutes looking at an hour of data.
+Use throttling to prevent duplicates.
 
 <<<<
 
-Risk? 'cause I accepted the risk.
+image::content_mgmt_02.png[]
+
+== Notables & Risk
+
+Notables and Risk are just modular alert actions.
+With Notable events, you have the opportunity to use varaibles to present information to your analysts.
+
+image::notable_01.png[]
+
+<<<<
+
+https://www.youtube.com/watch?v=9IG3zqvUqJY[Risk?]
+
+Frankly this is a topic worthy of it's own talk.
 
 == Drilldown Creation
 
@@ -145,6 +211,7 @@ With that said, a link to raw events can work in a pinch.
 <<<<
 
 With drilldown searches there are two main options to bring data back to the analyst:
+
 * A | datamodel search
 ** Pro - Raw events!
 ** Con - Typically really slow
@@ -158,7 +225,17 @@ In some circumstances, you're working with data outside a datamodel, so a more t
 
 We already spoke to | tstats syntax above, but I would like to provide a quick template for utilizing | datamodel searches.
 
-DM search example, broken into pieces
+Base:
+
+ |  datamodel <datamodel> <object in datamodel> search 
+
+Filter:
+
+ | search <field in datamodel>=<some value>
+
+Putting it together:
+
+ | datamodel Authentication Failed_Authentication search | search Authentication.user="$user$"
 
 == Extra Credit
 
@@ -171,11 +248,17 @@ I did, however, want to include some resources and further reading for the adven
 Anything that's a static threshold or stdv can typically be converted into an Extreme Search context.
 You can control how the context is generated and updated, giving you a self learning threshold on your searches.
 
-Macy's xs preso
+http://conf.splunk.com/files/2016/slides/anomaly-hunting-with-splunk-software.pdf[Macy Cronkrite's .conf2016 talk]
 
-Starcher's xs Blog
+http://www.georgestarcher.com/splunk-getting-extreme-part-one/[Starcher's eXtreme Search blog series]
 
 === Community
 
 Join us on Slack or IRC, I'm beatus.
 In Slack we have a handful of channels dedicated to security and advanced search techniques.
+
+https://splunk-usergroups.signup.team/[Slack Signup]
+
+https://wiki.splunk.com/Community:IRC[Splunk IRC]
+
+https://answers.splunk.com/[Splunk Answers]
