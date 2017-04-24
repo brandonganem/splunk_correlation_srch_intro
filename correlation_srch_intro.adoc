@@ -52,7 +52,7 @@ Reasons for creating a Correlation Search:
 
 * Replace an existing Correlation Search with one tailored for the environment
 * Additional alerting an organization's strength's and weaknesses
-** Leaverage good visability on endpoints to aid lack of visability on the network
+** Leverage good visibility on endpoints to aid lack of visibility on the network
 * Custom datasources that don't fit into a CIM datamodel
 
 <<<<
@@ -62,7 +62,7 @@ If I'm being honest, I've never been much of a fan of this search and I've heard
 
 <<<<
 
-The built in correlation search isn't particuarly smart.
+The built in correlation search isn't particularly smart.
 A generous reading of what the search could go something like so:
 
 "Detects excessive number of failed login attempts along with a successful attempt (this could indicate a successful brute force attack)"
@@ -79,7 +79,7 @@ So long as the number of failures is greater than the threshold set by the Extre
 
 <<<<
 
-In my expereince that isn't useful.
+In my experience that isn't useful.
 // Add picture later
 //image::firehose_dog.jpg[]
 //[.canvas-caption, position=center]
@@ -94,7 +94,7 @@ In my expereince that isn't useful.
 Some more advanced ideas
 
 * Admin account logged into a new system, followed by many login attempts by that account
-** Maybe expand this to lessor privledged users too?
+** Maybe expand this to lessor privileged users too?
 ** For a good datasource here, check out special group auditing in Windows (it's pretty neat)
 * Executable mimetype download followed by an authentication spike
 
@@ -164,9 +164,9 @@ While you do have the ability to add displayed fields in incident review, if we 
 Naming scheme ideas:
 
 * <Security Domain>-<Name>
-** Auth-Brute_force_succeded
+** Auth-Brute_force_succeeded
 * <Security Domain>-<Name>-<Timespan>
-** Auth-Brute_force_succeded-1h
+** Auth-Brute_force_succeeded-1h
 
 I'm a big fan of something that sticks out as a custom search.
 Beyond that, pick something consistent for, it will make it easier to manage from an administrative perspective and easier for analysts to know which correlation searches are in-house.
@@ -192,7 +192,7 @@ image::content_mgmt_02.png[]
 == Notables & Risk
 
 Notables and Risk are just modular alert actions.
-With Notable events, you have the opportunity to use varaibles to present information to your analysts.
+With Notable events, you have the opportunity to use variables to present information to your analysts.
 
 image::notable_01.png[]
 
@@ -204,8 +204,8 @@ Frankly this is a topic worthy of it's own talk.
 
 == Drilldown Creation
 
-The goal of a useful drilldown is to direct your analysts to additional relevent information.
-With this in mind I don't find it to be particuarly useful to just dump an analyst to information nearly identical to what's in the notable event.
+The goal of a useful drilldown is to direct your analysts to additional relevant information.
+With this in mind I don't find it to be particularly useful to just dump an analyst to information nearly identical to what's in the notable event.
 With that said, a link to raw events can work in a pinch.
 
 <<<<
@@ -239,9 +239,9 @@ Putting it together:
 
 == Extra Credit
 
-We didn't get into anything related to dynamic thresholding or exteme search.
+We didn't get into anything related to dynamic thresholding or extreme search.
 These items are worthy of a talk themselves.
-I did, however, want to include some resources and further reading for the adventorous.
+I did, however, want to include some resources and further reading for the adventurous.
 
 === Extreme Search!
 
